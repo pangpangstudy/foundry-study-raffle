@@ -8,8 +8,8 @@ import {Vm} from "forge-std/Vm.sol";
 import {VRFCoordinatorV2Mock} from "@chainlink/contracts/src/v0.8/mocks/VRFCoordinatorV2Mock.sol";
 
 contract RaffleTest is Test {
-    Raffle raffle;
-    HelperConfig helperConfig;
+    Raffle public raffle;
+    HelperConfig public helperConfig;
     // Events
     event RaffleEnter(address indexed player);
     // Args
@@ -19,8 +19,7 @@ contract RaffleTest is Test {
     uint64 subscriptionId;
     uint32 callbackGasLimit;
     address vrfCoordinatorV2;
-    address link;
-    uint256 deployerKey;
+
     // initalstate
     address public PLAYER = makeAddr("player");
     uint256 public constant STARTING_USER_BALANCE = 10 ether;
@@ -28,6 +27,7 @@ contract RaffleTest is Test {
     function setUp() public {
         DeployRaffle deployer = new DeployRaffle();
         (raffle, helperConfig) = deployer.run();
+        vm.deal(PLAYER, STARTING_USER_BALANCE);
         (
             entranceFee,
             interval,
@@ -35,10 +35,9 @@ contract RaffleTest is Test {
             subscriptionId,
             callbackGasLimit,
             vrfCoordinatorV2,
-            link,
-            deployerKey
+            ,
+
         ) = helperConfig.activeNetworkConfig();
-        vm.deal(PLAYER, STARTING_USER_BALANCE);
     }
 
     // test raffle state
@@ -189,9 +188,17 @@ contract RaffleTest is Test {
     }
 
     // fulfillRandomWords //
+    modifier skipTest() {
+        if (block.chainid != 31337) {
+            return;
+        }
+        _;
+    }
+
+    // 这是mock测试 所以 在 sepolia是不成功的
     function testFulfillRandomWordsCanOnlyBeCalledAfterPerformUpkeep(
         uint256 requestId
-    ) public raffleEntered {
+    ) public raffleEntered skipTest {
         vm.expectRevert("nonexistent request");
         VRFCoordinatorV2Mock(vrfCoordinatorV2).fulfillRandomWords(
             requestId,
@@ -203,6 +210,7 @@ contract RaffleTest is Test {
     function testFulfillRandomWordsPicksAWinnerResetsAndSendsMoney()
         public
         raffleEntered
+        skipTest
     {
         // 假定参与人数
         // 1. enterRaffle  第一步
