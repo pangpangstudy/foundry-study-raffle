@@ -119,6 +119,7 @@ contract Raffle is VRFConsumerBaseV2, AutomationCompatibleInterface {
         emit RequestedRaffleWinner(requestId);
     }
 
+    // fulfill
     function fulfillRandomWords(
         uint256 /*requestId*/,
         uint256[] memory randomWords
